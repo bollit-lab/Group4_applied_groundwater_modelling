@@ -176,6 +176,7 @@ _SUPPORT/src/scripts/scripts_limmat_data_preprocessing/groundwater_visualization
 # Student workspace - track only template folder
 PROJECT/workspace/*/
 !PROJECT/workspace/template/
+!PROJECT/workspace/group_04/
 
 # Planning folders (internal use only)
 PLANNING/
