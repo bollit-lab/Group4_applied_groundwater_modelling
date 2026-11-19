@@ -27,7 +27,7 @@ group:
 # Group 11: concession 226, scenario SC11
 # Group 12: concession 222, scenario SC12
 
-title: "Impact of a well group on the groundwater flow field."  # TODO: tailor the title (you may refine but keep core meaning)
+title: "Impact of a dry period on the groundwater flow field."  # TODO: tailor the title (you may refine but keep core meaning)
 
 description: >
   TODO: Provide 2–5 sentences describing the specific groundwater flow problem for your
@@ -35,6 +35,9 @@ description: >
   its impact matters (e.g. potential interference, river depletion, drawdown near
   sensitive receptors). You will implement the concessioned pumping rates and a
   50% pumping variant, then evaluate changes in heads, gradients, and river leakage.
+  GW Flow Problem Proposal: In this project, we aim to study a pair of wells in the Limmat
+  catchment. We will examine the effects of different pumping rates as well as the impact of
+  a predetermined scenario.
 
 model:
   # Calibrated MF6 05f flow model -- the SAME simulation the transport
