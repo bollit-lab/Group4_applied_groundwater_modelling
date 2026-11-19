@@ -9,7 +9,7 @@ group:
   number: 4                               # TODO: integer group number (0-12)
   authors:                                # TODO: list all group members (2–3 persons)
     - "Grant Kawamoto"
-    - "Mark Schäfer"                      # remove if only 2 members / add third if needed
+    - "Mark Schaefer"                      # remove if only 2 members / add third if needed
     - "Thomas Bolli"
 
 # Fixed assignments by group number:
