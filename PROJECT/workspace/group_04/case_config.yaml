@@ -1,0 +1,164 @@
+###############################################################
+# Case Study Scenario (Student Group Template)
+###############################################################
+# Fill ALL TODO fields. Keep units consistent (meters, days, m3/day).
+# Groups of 2–3 students. One YAML per group.
+# Concession numbers and scenarios are FIXED by group number.
+
+group:
+  number: 4                               # TODO: integer group number (0-12)
+  authors:                                # TODO: list all group members (2–3 persons)
+    - "Grant Kawamoto"
+    - "Mark Schäfer"                      # remove if only 2 members / add third if needed
+    - "Thomas Bolli"
+
+# Fixed assignments by group number:
+# Group 0: concession 210, scenario SC0 (demo)
+# Group 1: concession 219, scenario SC1
+# Group 2: concession 201, scenario SC2  
+# Group 3: concession 236, scenario SC3
+# Group 4: concession 120, scenario SC4
+# Group 5: concession 223, scenario SC5
+# Group 6: concession 227, scenario SC6
+# Group 7: concession 213, scenario SC7
+# Group 8: concession 207, scenario SC8
+# Group 9: concession 204, scenario SC9
+# Group 10: concession 220, scenario SC10
+# Group 11: concession 226, scenario SC11
+# Group 12: concession 222, scenario SC12
+
+title: "Impact of a well group on the groundwater flow field."  # TODO: tailor the title (you may refine but keep core meaning)
+
+description: >
+  TODO: Provide 2–5 sentences describing the specific groundwater flow problem for your
+  concession: state the location context, purpose of the well group, and why assessing
+  its impact matters (e.g. potential interference, river depletion, drawdown near
+  sensitive receptors). You will implement the concessioned pumping rates and a
+  50% pumping variant, then evaluate changes in heads, gradients, and river leakage.
+
+model:
+  # Calibrated MF6 05f flow model -- the SAME simulation the transport
+  # config (case_config_transport.yaml) references; bootstrapped via
+  # model_io_utils.ensure_flow_model(). This is the calibrated MODFLOW 6
+  # flow model from 05f; sim_name IS the GWF model name inside the
+  # simulation (there is no separate name field).
+  data_name: flow_model_mf6               # Calibrated MF6 GWF model (05f)
+  workspace: "~/applied_groundwater_modelling_data/limmat/calibration"  # 05f-calibrated model
+  sim_namefile: "mfsim.nam"               # MF6 simulation name file
+  sim_name: "limmat_valley"               # MF6 GWF model name inside the simulation
+  baseline_model_name: "limmat_valley"
+
+output:
+  # All group results should go into a dedicated folder using the group number.
+  workspace: "~/applied_groundwater_modelling_data/limmat/case_study_group_"  # auto-expand: replace <group_number>
+
+# NOTE: there is no `pumping:` block to fill in. The concession wells, their
+# rates and the 50% half-rate variant are ALL resolved for you from the
+# instructor-owned canonical roster by `casestudy_flow_builder`, which is given
+# only your group number. (This file previously offered `pumping.wells_source`,
+# `pumping.data_file` and `pumping.apply_half_rate_variant`; no code ever read
+# any of them, and `data_file` asked you to create a CSV nothing would open.)
+
+# Scenario assignments are FIXED by group number 
+scenarios:
+  options:
+    - id: 0
+      concession: 210
+      label: Demo - Lower outflow boundary by 1 m
+      type: chd_head_change
+      chd_head_change_m: -1
+    - id: 1
+      concession: 219
+      label: Increase all river leakage +20% (removal of clogging)
+      type: river_conductance
+      target: Limmat & Sihl
+      conductance_factor: 1.2
+    - id: 2
+      concession: 201
+      label: Decrease all river leakage -20% (increased clogging)
+      type: river_conductance
+      target: Limmat & Sihl
+      conductance_factor: 0.8
+    - id: 3
+      concession: 236
+      label: Urban greening increases recharge +20%
+      type: recharge_scale
+      recharge_factor: 1.2
+    - id: 4
+      concession: 120
+      label: Persistent dry periods and increased temperatures decrease recharge -20%
+      type: recharge_scale
+      recharge_factor: 0.8
+    - id: 5
+      concession: 223
+      label: A new weir raises the average water levels in zone 1 by +1.5 m
+      type: river_stage
+      target: Limmat & Sihl
+      stage_change_m: 1.5
+      stage_zone: 1
+    - id: 6
+      concession: 227
+      label: A river restoration project widens the rivers and lowers average water levels in zone 1
+      type: river_width_and_stage
+      target: Limmat & Sihl
+      width_factor: 1.5
+      stage_change_factor: -0.5
+      stage_zone: 1
+    - id: 7
+      concession: 213
+      label: New exploration data shows that aquifer transmissivity is 20% higher than previously thought
+      type: aquifer_transmissivity
+      transmissivity_factor: 1.2
+    - id: 8
+      concession: 207
+      label: New exploration data shows that aquifer transmissivity is 20% lower than previously thought
+      type: aquifer_transmissivity
+      transmissivity_factor: 0.8
+    - id: 9
+      concession: 204
+      label: A rising regional outflow boundary lifts heads by 1 m
+      type: chd_head_change
+      chd_head_change_m: 1
+    - id: 10
+      concession: 220
+      # 2026-09-03: -1.5 -> -0.1 m. At -1.5 the river stage fell BELOW the river
+      # bottom on ALL 2601 reaches, so the builder rightly refused an inverted
+      # river and the group could not run at all. The reaches carry only
+      # 0.4-1.0 m of water (min stage-rbot 0.400 m, median 1.000 m), so the
+      # largest physically valid uniform drop is about 0.4 m; -0.25 m is the
+      # biggest safe round value and -0.1 m leaves the most margin.
+      label: The weir is lowered and average water levels in zone 1 fall by 0.1 m
+      type: river_stage
+      target: Limmat & Sihl
+      stage_change_m: -0.1
+      stage_zone: 1
+    - id: 11
+      concession: 226
+      label: Channelisation narrows the rivers and deepens them in zone 1
+      type: river_width_and_stage
+      target: Limmat & Sihl
+      width_factor: 0.7
+      stage_change_factor: 0.5
+      stage_zone: 1
+    - id: 12
+      concession: 222
+      label: A severe multi-year drought decreases recharge -40%
+      type: recharge_scale
+      recharge_factor: 0.6
+
+implementation_plan: >
+  TODO: Bullet the concrete steps you will perform (baseline load, add wells, run
+  concession rates, run 50% rates, apply scenario parameter/stress change, produce maps
+  of head difference, river leakage comparison, drawdown profiles, budget summaries).
+
+evaluation_metrics: >
+  TODO: Define 3–5 metrics (e.g. max drawdown at key location, total river leakage change (m3/day),
+  area where drawdown > 0.5 m, change in gradient toward river, % change in discharge components).
+
+deliverables: >
+  TODO: List expected artifacts (plots, tables) & short narrative explaining impacts of the well group
+  under concession vs 50% pumping and under the selected scenario.
+
+quality_checks: >
+  TODO: Briefly state how you will verify model stability (mass balance error, convergence, sensitivity bounds).
+

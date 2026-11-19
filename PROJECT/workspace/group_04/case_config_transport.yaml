@@ -1,0 +1,1125 @@
+###############################################################
+# Transport Case Study Configuration (All Groups)
+###############################################################
+# This file contains ALL transport scenarios for groups 0-12 (13 groups).
+# Each group uses the scenario matching their group number.
+# Keep units consistent (meters, days, m3/day, mg/L).
+# Wells are REUSED from flow case study (case_config.yaml).
+# The group number and authors are already defined in the case_config.yaml file.
+# group:
+#   number: 4                               
+#   authors:                                
+#     - "Grant Kawamoto"
+#     - "Mark Schäfer"      
+#     - "Thomas Bolli"                
+
+# Fixed assignments by group number (each group gets ONE canonical REAL
+# geothermal-doublet concession; injection + extraction wells both active,
+# extraction well = compliance/monitoring "Well"):
+# Each group is assigned a REAL AWEL geothermal-doublet concession; the
+# concession id and the injection/extraction coordinates below are the real
+# licensed ones. Q = licensed maximum (4320 m3/d) for all groups.
+# Group 0: concession b010210 - TCE       - Industrial spill (demo) - Q=4320 m3/d
+# Group 1: concession b010219 - Nitrate    - Sports field fertilizer - Q=4320 m3/d
+# Group 2: concession b010201 - Benzene    - Gas station leak (decay) - Q=4320 m3/d
+# Group 3: concession b010236 - Chloride   - Legacy landfill - Q=4320 m3/d
+# Group 4: concession b010120 - Chromium   - Metal plating (R~19) - Q=4320 m3/d
+# Group 5: concession b010223 - PFOA       - Industrial point source - Q=4320 m3/d
+# Group 6: concession b010227 - PCE        - Dry cleaning (sorption) - Q=4320 m3/d
+# Group 7: concession b010213 - Ammonium   - Leaking sewer (decay) - Q=4320 m3/d
+# Group 8: concession b010207 - Atrazine   - Garden allotment - Q=4320 m3/d
+# Group 9: concession b010204 - MTBE       - Filling-station tank leak - Q=4320 m3/d
+# Group 10: concession b010220 - Carbamazepine - Combined-sewer overflow - Q=4320 m3/d
+# Group 11: concession b010226 - Boron      - Demolition-waste landfill - Q=4320 m3/d
+# Group 12: concession b010222 - Nickel     - Electroplating soakaway - Q=4320 m3/d
+#
+# NOTE: `recirculation_fraction` below is carried for reference only -- no part
+# of the transport model reads it, and the recirculation scenario is described
+# (not built) in 08t.  Do not base any conclusion on it.
+
+
+# -------------------------------------------------------------------------
+# HOW YOUR GRID IS REFINED  (you do not configure this)
+#
+# There is NO telescopic / cut-out submodel in this course. You run the SAME
+# regional model as everyone else. The instructor-provided build refines it
+# locally -- the spill-to-well corridor plus the injection well -- at a 10 m
+# cell size, inside a circle of a radius PINNED PER GROUP by the instructor --
+# 44 m to 90 m across the 13 groups. It is not chosen by a retry ladder any more
+# (that ladder survives only as `FALLBACK_REFINE_RADII`): each radius was
+# validated for YOUR group and frozen. Your notebook prints the radius it used.
+#
+# The teaching notebooks in PROJECT/transport/ refine the same kind of corridor
+# but over its full length: 10 m for the run you do there, and 1 m for the
+# reference we ship. The 1 m one costs ~96 minutes, which is why we run it once
+# and give you the output instead of asking you to reproduce it.
+#
+# Removed 2026-08-31: the whole `submodel:` block -- `buffer_north/south/east/
+# west_m` AND `cell_size_m`. NONE of it was read by any code. `cell_size_m`
+# said 2 m or 5 m while the build has always used 10 m, so it did not merely do
+# nothing, it stated the wrong number. Target state of milestone M3b; the
+# structural gate `submodel_buffer_blocks` expects zero and now gets it.
+# -------------------------------------------------------------------------
+title: "Contaminant transport with well field interactions"  # TODO: Tailor with your contaminant
+
+description: >
+  TODO: Provide 2–5 sentences describing your transport scenario. Include: contaminant type,
+  source location/type, duration (pulse vs continuous), and the key question you're addressing
+  regarding well-contaminant interactions (e.g., will pumping wells capture the plume? Does
+  injection spread contamination? What's the breakthrough time at monitoring locations?).
+
+# Parent flow model (the 05f-CALIBRATED MF6 / DISV steady-state field)
+# MF6 GWT base: the transport base builds on the CALIBRATED steady-state
+# MODFLOW 6 / DISV flow model produced by the flow track's 05f_calibration.ipynb
+# (same DISV grid + wells as notebook4_model, but with the calibrated K field,
+# mean K ~ 375 m/d, 2,160 m³/d municipal pumping). See
+# _SUPPORT/src/transport_base_model.py, which calls
+# model_io_utils.ensure_flow_model() to load the calibration simulation and gets
+# model "limmat_valley". This REPLACES both the uncalibrated notebook4_model base
+# and the legacy MODFLOW-NWT references (limmat_valley_model_nwt) that no longer apply.
+model:
+  data_name: flow_model_mf6               # Calibrated MF6 GWF model (05f); bootstrapped via ensure_flow_model()
+  workspace: "~/applied_groundwater_modelling_data/limmat/calibration"  # 05f-calibrated model
+  sim_namefile: "mfsim.nam"               # MF6 simulation name file
+  sim_name: "limmat_valley"               # MF6 GWF model name inside the simulation
+  baseline_model_name: "limmat_valley"
+
+# Transport scenario output location
+output:
+  workspace: "~/applied_groundwater_modelling_data/limmat/transport/case_study_transport_group_"  # auto-expand with group number
+
+# WELLS. There is nothing to configure here. Your doublet's injection and
+# extraction coordinates are the real licensed AWEL ones, resolved for BOTH
+# halves of the case study from the instructor-owned canonical roster, so the
+# flow and transport halves cannot disagree about where your wells are.
+# (This file previously declared `wells.source` / `wells.config_file`, pointing
+# at ./case_config.yaml as if the wells were loaded from there. No code read
+# either key.) Your group NUMBER does come from case_config.yaml -- see below.
+
+# Transport scenario assignments are FIXED by group number
+transport_scenarios:
+  options:
+    # ========== GROUP 0: TCE - Industrial Spill (Demo) ==========
+    - id: 0
+      title: "Industrial solvent spill (TCE)"
+      concession: "b010210"
+      contaminant: "Trichloroethylene (TCE)"
+      description: >
+        A 1-day TCE spill from an industrial facility. Assess plume migration
+        under natural gradient conditions and with well pumping/injection effects.
+        Determine if/when contamination reaches the well (monitoring location).
+
+      properties:
+        # Chemical Abstracts Service (CAS) number and properties
+        # Relevant to look up properties of a chemical in databases/literature,
+        # find regulatory limits, toxicity, etc.
+        cas_number: "79-01-6"
+        molecular_weight_g_mol: 131.39
+        solubility_mg_L: 1100
+        conservative: true                # No sorption or decay
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.0e-9
+        sorption: false
+        distribution_coefficient_mL_g: 0.0
+        decay: false
+        first_order_decay_constant_1_per_day: 0.0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: the ladder's pick (r70) carried sub-metre cells; r90 is the cleanest measured for this corridor.
+      # Validated 2026-09-01: no cell below 1 m (min 5.32 m), runs in 38 s on the hub,
+      # receptor peak 138.5 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 90.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010210"
+        injection_easting: 2681704.9      # m (LV95)
+        injection_northing: 1247555.9     # m (LV95)
+        extraction_easting: 2681885.9     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1247397.9    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.221     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 51.0              # m, +E offset from extraction well
+          northing: -77.0            # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        # TODO: Adjust duration of source activation based on model runs to 
+        # ensure plume reaches monitoring point. Minimum 1 day.
+        duration_days: 1               # 1-day spill
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+        #   2026-09-02: 100 -> 5 mg/L. At 100 the receptor peak was 138.5x the
+        #   threshold, so the compliance verdict was settled before any modelling judgment
+        #   was applied. Transport is linear in this value, so the peak scales exactly:
+        #   the case now lands at ~6.92x the threshold -- still clearly exceeding, but the
+        #   student has to do the work to show it. Well under the solubility limit.
+        concentration_mg_L: 5
+      simulation:
+        # TODO: Adjust simulation duration based on model runs to ensure plume
+        # reaches monitoring point. Minimum 30 days. 
+        duration_days: 60              # 60 days (manageable domain size)
+
+
+      monitoring:
+        threshold_mg_L: 0.005    # corrected 2026-07-19: was 5.0 (~1000x too high; TCE drinking-water standard ≈ 0.005 mg/L = 5 µg/L)
+        compliance_location: "Well"
+
+    # ========== GROUP 1: Nitrate - Sports Field Fertilizer ==========
+    - id: 1
+      concession: "b010219"
+      title: "Sports field fertilizer contamination"
+      contaminant: "Nitrate (NO3-)"
+      description: >
+        The tank holding the nitrate fertilizer for a large sports field has  leaked, unloading nitrate into the groundwater over a 1-day period.  Determine if the nitrate plume reaches the downgradient monitoring well  or the pumping well.
+
+      properties:
+        cas_number: "14797-55-8"
+        molecular_weight_g_mol: 62.0
+        solubility_mg_L: 850000
+        conservative: true
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.9e-9
+        sorption: false
+        distribution_coefficient_mL_g: 0.0
+        decay: false
+        first_order_decay_constant_1_per_day: 0.0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: NO radius in the default ladder produced a clean mesh for this corridor; r50 was found by a wider search.
+      # Validated 2026-09-01: no cell below 1 m (min 1.79 m), runs in 63 s on the hub,
+      # receptor peak 0.0089 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 50.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010219"
+        injection_easting: 2679765.3      # m (LV95)
+        injection_northing: 1249207.9     # m (LV95)
+        extraction_easting: 2679684.5     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1249120.4    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.272     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          # 2026-09-02: moved from (+155.3, -89.7) to (+42.4, +42.4).
+          # The old position missed the capture zone by 175 m of its 179 m offset -- almost
+          # pure bypass, peaking at 0.009x the threshold, so the verdict needed no modelling.
+          # A sweep of eight bearings at 120 m found the capture zone lies NORTH-EAST; closing
+          # in to 60 m cuts the dilution further (0.009 -> 0.080 -> 0.131x at equal source).
+          easting: 42.4              # m, +E offset from extraction well
+
+          northing: 42.4             # m, +N offset from extraction well
+
+          layer: 1
+        start_time_days: 0
+        # TODO: Adjust duration of source activation based on model runs to 
+        # ensure plume reaches monitoring point. Minimum 1 day.
+        duration_days: 1             # 1-day spill
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+        #   2026-09-02: 50 -> 700 mg/L. The scenario describes a leaking TANK of liquid
+        #   fertilizer; 50 mg/L is field-leachate strength and was inconsistent with that
+        #   story. Commercial liquid N fertilizer is ~30% N by weight, so a source zone in
+        #   the high hundreds of mg/L as NO3- follows from the narrative as written.
+        #   With the move above this lands at ~1.8x the 25 mg/L threshold.
+        concentration_mg_L: 700.0
+
+        ssm_itype: -1
+
+      simulation:
+        # TODO: Adjust simulation duration based on model runs to ensure plume
+        # reaches monitoring point. Minimum 30 days. 
+        duration_days: 30
+
+
+      monitoring:
+        threshold_mg_L: 25.0            # Drinking water standard
+        compliance_location: "Downgradient wells"
+
+    # ========== GROUP 2: Benzene - Gas Station Leak ==========
+    - id: 2
+      concession: "b010201"
+      title: "Gasoline station leak (BTEX)"
+      contaminant: "Benzene"
+      description: >
+        Point source benzene leak with biodegradation. Assess natural attenuation
+        capacity and monitored natural attenuation feasibility.
+
+      properties:
+        cas_number: "71-43-2"
+        molecular_weight_g_mol: 78.11
+        solubility_mg_L: 1780
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.0e-9
+        sorption: false
+        distribution_coefficient_mL_g: 0.0
+        decay: true
+        first_order_decay_constant_1_per_day: 0.005  # Moderate biodegradation
+        half_life_days: 138.6           # ~5 months half-life
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: the ladder's pick (r70) carried sub-metre cells; r62 is the cleanest measured for this corridor.
+      # Validated 2026-09-01: no cell below 1 m (min 4.51 m), runs in 98 s on the hub,
+      # receptor peak 23.65 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 62.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010201"
+        injection_easting: 2679926.5      # m (LV95)
+        injection_northing: 1248996.9     # m (LV95)
+        extraction_easting: 2680130.5     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1248879.9    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.384     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 50.0              # m, +E offset from extraction well
+          northing: -102.0           # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        # TODO: Adjust duration of source activation based on model runs to 
+        # ensure plume reaches monitoring point. Minimum 1 day.
+        duration_days: 10               # 2-month leak
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+        #   2026-09-02: 10 -> 1.5 mg/L. At 10 the receptor peak was 23.7x the
+        #   threshold, so the compliance verdict was settled before any modelling judgment
+        #   was applied. Transport is linear in this value, so the peak scales exactly:
+        #   the case now lands at ~3.55x the threshold -- still clearly exceeding, but the
+        #   student has to do the work to show it. Well under the solubility limit.
+        concentration_mg_L: 1.5
+        ssm_itype: -1
+
+      simulation:
+        # TODO: Adjust simulation duration based on model runs to ensure plume
+        # reaches monitoring point. Minimum 30 days. 
+        duration_days: 60
+
+
+      monitoring:
+        threshold_mg_L: 0.005           # Drinking water MCL
+        compliance_location: "Downgradient monitoring wells"
+
+    # ========== GROUP 3: Chloride - Legacy Landfill ==========
+    - id: 3
+      concession: "b010236"
+      title: "Legacy landfill plume"
+      contaminant: "Chloride (conservative tracer)"
+      description: >
+        Historical contamination from old landfill (10-year continuous source).
+        Characterize current plume extent and predict future migration.
+
+      properties:
+        cas_number: "16887-00-6"
+        molecular_weight_g_mol: 35.45
+        solubility_mg_L: 350000
+        conservative: true
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 2.0e-9
+        sorption: false
+        distribution_coefficient_mL_g: 0.0
+        decay: false
+        first_order_decay_constant_1_per_day: 0.0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: r90 is the cleanest measured for this corridor.
+      # Validated 2026-09-01: no cell below 1 m (min 4.39 m), runs in 551 s on the hub,
+      # receptor peak 0.5217 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 90.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010236"
+        injection_easting: 2680756.0      # m (LV95)
+        injection_northing: 1249057.0     # m (LV95)
+        extraction_easting: 2680862.0     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1249015.0    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.213     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "area"
+        release_type: "continuous"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 100.0             # m, +E offset from extraction well
+          northing: -83.0            # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        duration_days: 3650             # Started 10 years ago, ongoing
+        concentration_mg_L: 200.0
+        ssm_itype: -1
+
+      simulation:
+        # Capped from 3650 d: this continuous source reaches a stable plateau
+        # (~65 mg/L, BELOW the 100 mg/L threshold -> MARGINAL) by ~330 d and stays
+        # flat thereafter, so 9/10 of the original horizon just recomputed a flat
+        # line. 730 d shows the rise plus a full 2-year stable plateau and runs in
+        # well under a minute on this Mac. Verdict unchanged (MARGINAL).
+        duration_days: 730
+
+
+      monitoring:
+        threshold_mg_L: 100.0
+        compliance_location: "Property boundary and river"
+
+    # ========== GROUP 4: Chromium - Metal Plating Facility ==========
+    - id: 4
+      concession: "b010120"
+      title: "Metal plating facility chromium leak"
+      contaminant: "Chromium (Cr-VI)"
+      description: >
+        Point source chromium from electroplating workshop with sorption. Assess plume
+        mobility and evaluate pump-and-treat remediation timing requirements.
+
+      properties:
+        cas_number: "18540-29-9"
+        molecular_weight_g_mol: 52.0
+        solubility_mg_L: 10000
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.1e-9
+        sorption: true
+        distribution_coefficient_mL_g: 2.0  # Strong sorption
+        decay: false
+        first_order_decay_constant_1_per_day: 0.0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # The corridor mesh is pinned, not rediscovered at runtime. The default radius
+      # ladder keeps the first radius that BUILDS, which is not always one that is
+      # usable -- at radius 70 this group's mesh had 225 sub-metre cells and did not converge at all.
+      # Students do not change this.
+      geometry:
+        refine_radius_m: 90.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010120"
+        injection_easting: 2682590.0      # m (LV95)
+        injection_northing: 1248496.9     # m (LV95)
+        extraction_easting: 2682706.0     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1248549.9    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.376     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 53.0              # m, +E offset from extraction well
+          northing: -76.0            # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        # TODO: Adjust duration of source activation based on model runs to
+        # ensure plume reaches monitoring point. Minimum 1 day.
+        duration_days: 1               # 1-day spill
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+        # Chosen so the delayed retarded front stays CLEARLY, not marginally, below
+        # the 0.1 mg/L threshold on EVERY validated mesh. Transport is linear in the
+        # source concentration here (linear sorption, no decay), so the peak scales
+        # proportionally.
+        #   2026-09-01: at 13.0 mg/L the four validated meshes gave 0.81-0.95 of the
+        #   threshold -- i.e. the "clearly below" intent this comment already claimed
+        #   was NOT met, and mesh choice alone could have decided compliance.
+        #   At 9.0 mg/L they give 0.56-0.66, inside the instructor acceptance rule
+        #   (every validated mesh below 0.8, or above 1.333, of the threshold).
+        # The lesson is the RETARDATION-delayed arrival, not a knife-edge call.
+        concentration_mg_L: 9.0
+        ssm_itype: -1
+
+      simulation:
+        # TODO: Adjust simulation duration based on model runs to ensure plume
+        # reaches monitoring point. Minimum 30 days.
+        duration_days: 730
+
+
+      monitoring:
+        threshold_mg_L: 0.1             # Drinking water standard
+        compliance_location: "Property boundary and wells"
+
+    # ========== GROUP 5: PFOA - Industrial Point Source ==========
+    - id: 5
+      concession: "b010223"
+      title: "PFAS contamination"
+      contaminant: "PFOA (perfluorooctanoic acid)"
+      description: >
+        Point source PFAS release (conservative, mobile). Assess Spill
+        migration and compliance with drinking water standards.
+
+      properties:
+        cas_number: "335-67-1"
+        molecular_weight_g_mol: 414.07
+        solubility_mg_L: 9500
+        conservative: true
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 0.7e-9
+        sorption: false                 # PFAS are highly mobile
+        distribution_coefficient_mL_g: 0.0
+        decay: false                    # Persistent
+        first_order_decay_constant_1_per_day: 0.0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: r70 is the cleanest measured for this corridor.
+      # Validated 2026-09-01: no cell below 1 m (min 2.54 m), runs in 19 s on the hub,
+      # receptor peak 49.76 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 70.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010223"
+        injection_easting: 2681890.0      # m (LV95)
+        injection_northing: 1248203.9     # m (LV95)
+        extraction_easting: 2681894.0     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1248169.9    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.142     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 32.0              # m, +E offset from extraction well
+          northing: -66.0            # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        # TODO: Adjust duration of source activation based on model runs to
+        # ensure plume reaches monitoring point. Minimum 1 day.
+        duration_days: 1               # 1-day spill
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+        #   2026-09-02: 1 -> 0.28 mg/L. At 1 the receptor peak was 49.8x the
+        #   threshold, so the compliance verdict was settled before any modelling judgment
+        #   was applied. Transport is linear in this value, so the peak scales exactly:
+        #   the case now lands at ~13.93x the threshold -- still clearly exceeding, but the
+        #   student has to do the work to show it. Well under the solubility limit.
+        concentration_mg_L: 0.28
+        ssm_itype: -1
+
+      simulation:
+        # TODO: Adjust simulation duration based on model runs to ensure plume
+        # reaches monitoring point. Minimum 30 days.
+        duration_days: 30
+
+
+      monitoring:
+        threshold_mg_L: 0.0002          # Very low drinking water advisory (0.2 µg/L)
+        compliance_location: "Drinking water wells"
+
+    # ========== GROUP 6: PCE - Dry Cleaning Facility Leak ==========
+    - id: 6
+      concession: "b010227"
+      title: "Dry cleaning facility solvent leak"
+      contaminant: "Perchloroethylene (PCE)"
+      description: >
+        Point source PCE leak from urban dry cleaning facility with slight sorption.
+        Assess plume migration and potential for natural attenuation.
+
+      properties:
+        cas_number: "127-18-4"
+        molecular_weight_g_mol: 165.83
+        solubility_mg_L: 200
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 0.9e-9
+        sorption: true
+        distribution_coefficient_mL_g: 0.08  # Slight sorption
+        decay: false
+        first_order_decay_constant_1_per_day: 0.0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: only ONE ladder radius (r56) was clean; r44 was found by a wider search and is cleaner still.
+      # Validated 2026-09-01: no cell below 1 m (min 2.03 m), runs in 360 s on the hub,
+      # receptor peak 38.22 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 44.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010227"
+        injection_easting: 2681757.0      # m (LV95)
+        injection_northing: 1247774.0     # m (LV95)
+        extraction_easting: 2681881.0     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1247765.0    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.596     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 56.0              # m, +E offset from extraction well
+          northing: -244.0           # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        duration_days: 90               # 3-month leak
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+        #   2026-09-02: 50 -> 2.9 mg/L. At 50 the receptor peak was 38.2x the
+        #   threshold, so the compliance verdict was settled before any modelling judgment
+        #   was applied. Transport is linear in this value, so the peak scales exactly:
+        #   the case now lands at ~2.22x the threshold -- still clearly exceeding, but the
+        #   student has to do the work to show it. Well under the solubility limit.
+        concentration_mg_L: 2.9
+        ssm_itype: -1
+
+      simulation:
+        # Capped from 3650 d: the 90-d PCE pulse peaks at the well at ~344 d and
+        # exceeds the 0.04 mg/L threshold over ~180-700 d, then clears (back to ~0
+        # by ~1300 d). 1095 d (3 yr) captures the complete rise-peak-decline. The
+        # original 3650-d horizon also FORCED the Courant cap at high Q=5760
+        # (nstp=4000, Cr~1.25 > 1 -> numerically inaccurate); shortening to 1095 d
+        # brings the required nstp back under the cap so Cr<1 (accurate).
+        # Verdict unchanged (REACHES-above).
+        duration_days: 1095
+
+
+      monitoring:
+        threshold_mg_L: 0.04            # Drinking water MCL
+        compliance_location: "Property boundary"
+
+    # ========== GROUP 7: Ammonium - Leaking Sewer Line ==========
+    - id: 7
+      concession: "b010213"
+      title: "Leaking sewer line contamination"
+      contaminant: "Ammonium (NH4+)"
+      description: >
+        Continuous ammonium discharge from aging urban sewer infrastructure with
+        nitrification (decay). Model transformation and downgradient concentration profiles.
+
+      properties:
+        cas_number: "14798-03-9"
+        molecular_weight_g_mol: 18.04
+        solubility_mg_L: 1000000
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.9e-9
+        sorption: false
+        distribution_coefficient_mL_g: 0.0
+        decay: true
+        first_order_decay_constant_1_per_day: 0.02  # Fast nitrification
+        half_life_days: 34.7            # ~1 month half-life
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: r56 fails its pilot solve outright; r84 is the cleanest measured that runs.
+      # Validated 2026-09-01: no cell below 1 m (min 4.56 m), runs in 209 s on the hub,
+      # receptor peak 6.578 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 84.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010213"
+        injection_easting: 2682090.0      # m (LV95)
+        injection_northing: 1248102.9     # m (LV95)
+        extraction_easting: 2682138.0     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1248114.9    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.093     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "line"                    # Line source (sewer)
+        release_type: "continuous"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 75.0              # m, +E offset from extraction well
+          northing: -114.0           # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        duration_days: 3650             # Ongoing leak
+        concentration_mg_L: 30.0
+        ssm_itype: -1
+
+      simulation:
+        # Capped from 3650 d: this continuous source crosses the 0.5 mg/L threshold
+        # at ~40 d and reaches a stable plateau (~2.35 mg/L -> REACHES-above, despite
+        # nitrification decay) by ~330 d, flat thereafter. 730 d resolves the verdict
+        # (early exceedance + stable 2-year plateau) and fits the budget easily.
+        # Verdict unchanged (REACHES-above).
+        duration_days: 730
+
+
+      monitoring:
+        threshold_mg_L: 0.5             # Drinking water guideline
+        compliance_location: "Downgradient monitoring points"
+
+    # ========== GROUP 8: Atrazine - Garden Allotment Pesticide ==========
+    - id: 8
+      concession: "b010207"
+      title: "Garden allotment pesticide contamination"
+      contaminant: "Atrazine"
+      description: >
+        An atrazine spill from a garden allotment pesticide application. 
+
+      properties:
+        cas_number: "1912-24-9"
+        molecular_weight_g_mol: 215.68
+        solubility_mg_L: 35
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 0.8e-9
+        sorption: true
+        distribution_coefficient_mL_g: 0.3  # Moderate sorption
+        decay: false
+        first_order_decay_constant_1_per_day: 0.0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: only ONE ladder radius (r78) was clean; r44 was found by a wider search.
+      # Validated 2026-09-01: no cell below 1 m (min 1.67 m), runs in 73 s on the hub,
+      # receptor peak 0.0963 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 44.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010207"
+        injection_easting: 2682181.4      # m (LV95)
+        injection_northing: 1247730.9     # m (LV95)
+        extraction_easting: 2682105.4     # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1247611.4    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.460     # validated injection->extraction recirc fraction (05f-calibrated field)
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: -53.0             # m, -E offset from extraction well
+          northing: -82.0            # m, -N offset from extraction well
+          layer: 1
+        start_time_days: 0
+        # TODO: Adjust duration of source activation based on model runs to
+        # ensure plume reaches monitoring point. Minimum 1 day.
+        # 2026-09-02: 1 -> 90 d. A one-day dump delivered too little mass for the plume to
+        # matter (peak was 0.10x the threshold -- compliance was a foregone conclusion).
+        # Atrazine's 35 mg/L solubility rules out fixing this with concentration alone, and a
+        # season-long leach from an allotment is the better story anyway.
+        duration_days: 90            # season-long leaching, not a one-day dump
+
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+
+        #   2026-09-02: 5.0 -> 15.0 mg/L, together with the 90 d release above. Measured:
+
+        #   the case now peaks at 2.07x the threshold (was 0.10x). Well under atrazine's
+
+        #   35 mg/L solubility. Transport is linear in this value, so it scales exactly.
+
+        concentration_mg_L: 15.0
+
+        ssm_itype: -1
+
+      simulation:
+        # 2026-09-01: extended 60 -> 365 d. At 60 days the run ended while the
+        # breakthrough curve was still RISING -- the reported peak was the last time
+        # step, not a peak, and it under-read the true maximum by ~2.5x. The peak
+        # actually occurs near day 130. The compliance verdict is unaffected (well
+        # under the threshold either way), but students now see the curve turn over.
+        duration_days: 365
+
+      monitoring:
+        threshold_mg_L: 0.1             # Drinking water standard (EU)
+        compliance_location: "Groundwater monitoring network"
+
+    # ========== GROUP 9: MTBE - Filling-station tank leak ==========
+    - id: 9
+      concession: "b010204"
+      title: "Filling-station tank leak"
+      contaminant: "MTBE (methyl tert-butyl ether)"
+      description: >
+        A corroded underground tank at a filling station has released the petrol oxygenate MTBE into the groundwater over a one-week period. MTBE is far more soluble and far less retarded than the fuel hydrocarbons beside it, so it outruns them. Determine whether it reaches the extraction well above the taste-and-odour limit.
+
+      properties:
+        cas_number: "1634-04-4"
+        molecular_weight_g_mol: 88.15
+        solubility_mg_L: 42000.0
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.9e-9
+        sorption: true
+        distribution_coefficient_mL_g: 0.03        # R ~ 1.3
+        decay: true
+        first_order_decay_constant_1_per_day: 0.00198042
+        half_life_days: 350.0
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: the ladder's pick (r70) carried sub-metre cells; r56 is the cleanest measured for this corridor.
+      # Validated 2026-09-01: no cell below 1 m (min 1.92 m), runs in 246 s on the hub,
+      # receptor peak 1.93 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 56.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010204"
+        injection_easting: 2678858.5      # m (LV95)
+        injection_northing: 1250067.4     # m (LV95)
+        extraction_easting: 2678967.0      # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1250021.4    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.0       # NOT YET DERIVED (pending M3b, unlike groups 0-8);
+                                          # reference only -- no part of the transport model reads it
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 179.7
+          northing: -187.9
+          layer: 1
+        start_time_days: 0
+        duration_days: 7
+        concentration_mg_L: 4.0
+        ssm_itype: -1
+
+      simulation:
+        duration_days: 365
+
+      monitoring:
+        threshold_mg_L: 0.015    # taste-and-odour threshold (no Swiss numeric GwV limit)
+        compliance_location: "Well"
+
+    # ========== GROUP 10: Carbamazepine - Combined-sewer overflow ==========
+    - id: 10
+      concession: "b010220"
+      title: "Combined-sewer overflow"
+      contaminant: "Carbamazepine"
+      description: >
+        A combined-sewer overflow has discharged untreated wastewater to a soakaway for three months. Carbamazepine is an anti-epileptic drug that neither sorbs strongly nor degrades, which is why it is used as a marker for wastewater in groundwater. The source is weak but the limit is very low. Determine whether it exceeds.
+
+      properties:
+        cas_number: "298-46-4"
+        molecular_weight_g_mol: 236.27
+        solubility_mg_L: 18.0
+        # NOT conservative: carbamazepine is PERSISTENT (no decay) but it does sorb
+        # weakly (Kd 0.1 -> R ~ 1.9). "Conservative" here means non-reactive in both
+        # senses, which the config linter enforces.
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.9e-9
+        sorption: true
+        distribution_coefficient_mL_g: 0.1        # R ~ 1.9
+        decay: false
+        first_order_decay_constant_1_per_day: 0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # Pinned, not rediscovered at runtime: only ONE ladder radius (r78) was clean; r74 was found by a wider search.
+      # Validated 2026-09-01: no cell below 1 m (min 1.58 m), runs in 79 s on the hub,
+      # receptor peak 1.506 x the threshold, and the verdict is unchanged on a second
+      # independent clean mesh. Students do not change this.
+      geometry:
+        refine_radius_m: 74.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010220"
+        injection_easting: 2681128.0      # m (LV95)
+        injection_northing: 1249224.0     # m (LV95)
+        extraction_easting: 2681225.0      # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1249229.0    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.0       # NOT YET DERIVED (pending M3b, unlike groups 0-8);
+                                          # reference only -- no part of the transport model reads it
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 92.3
+          northing: -118.2
+          layer: 1
+        start_time_days: 0
+        duration_days: 90
+        concentration_mg_L: 0.002
+        ssm_itype: -1
+
+      simulation:
+        duration_days: 365
+
+      monitoring:
+        threshold_mg_L: 0.0001    # GwV general limit for organic trace substances (0.1 ug/L)
+        compliance_location: "Well"
+
+    # ========== GROUP 11: Boron - Demolition-waste landfill leachate ==========
+    - id: 11
+      concession: "b010226"
+      title: "Demolition-waste landfill leachate"
+      contaminant: "Boron (as B)"
+      description: >
+        An old demolition-waste landfill leaches boron from gypsum plasterboard continuously. Boron is conservative -- it neither sorbs nor decays -- so it travels at the velocity of the water. The source is close and the release does not stop. Determine whether the well exceeds the limit within the study period, and whether it would afterwards.
+
+      properties:
+        cas_number: "7440-42-8"
+        molecular_weight_g_mol: 10.81
+        solubility_mg_L: 55000.0
+        conservative: true
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.9e-9
+        sorption: false
+        distribution_coefficient_mL_g: 0.0        # R ~ 1.0
+        decay: false
+        first_order_decay_constant_1_per_day: 0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # The corridor mesh is pinned, not rediscovered at runtime. Radius 84 is chosen
+      # because it is simultaneously the CLEANEST mesh for this corridor (min cell
+      # 5.09 m, no sub-metre cells) and the FASTEST (272 s on the hub vs 385 s for the
+      # radius the default ladder picks). The ladder's pick carried 82 sub-metre cells
+      # and under-read this group's peak by ~30% (0.435x vs 0.60-0.62x of the limit).
+      # Students do not change this.
+      geometry:
+        refine_radius_m: 84.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010226"
+        injection_easting: 2680207.0      # m (LV95)
+        injection_northing: 1248955.0     # m (LV95)
+        extraction_easting: 2680191.0      # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1248880.0    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.0       # NOT YET DERIVED (pending M3b, unlike groups 0-8);
+                                          # reference only -- no part of the transport model reads it
+      source:
+        type: "point"
+        release_type: "continuous"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 52.8
+          northing: -45.9
+          layer: 1
+        start_time_days: 0
+        duration_days: 3650
+        concentration_mg_L: 15.0
+        ssm_itype: -1
+
+      simulation:
+        duration_days: 365
+
+      monitoring:
+        threshold_mg_L: 1.0    # TBDV drinking-water value for boron
+        compliance_location: "Well"
+
+    # ========== GROUP 12: Nickel - Electroplating rinse-water soakaway ==========
+    - id: 12
+      concession: "b010222"
+      title: "Electroplating rinse-water soakaway"
+      contaminant: "Nickel (Ni2+)"
+      description: >
+        Rinse water from an electroplating shop was discharged to a soakaway in a single incident. Nickel sorbs to the aquifer matrix, so the plume travels roughly ten times slower than the water. Determine whether the retarded front reaches the well inside the three-year study period, and whether it exceeds the limit when it does.
+
+      properties:
+        cas_number: "7440-02-0"
+        molecular_weight_g_mol: 58.69
+        solubility_mg_L: 1000.0
+        conservative: false
+
+      transport:
+        porosity: 0.20
+        bulk_density_kg_m3: 1800.0
+        longitudinal_dispersivity_m: 10.0
+        transverse_dispersivity_m: 1.0
+        vertical_dispersivity_m: 0.1
+        molecular_diffusion_m2_s: 1.9e-9
+        sorption: true
+        distribution_coefficient_mL_g: 1.0        # R ~ 10.0
+        decay: false
+        first_order_decay_constant_1_per_day: 0
+        half_life_days: null
+
+      # --- Prepared refinement geometry (INSTRUCTOR-VALIDATED; contract A19) ---
+      # The corridor mesh is pinned, not rediscovered at runtime. The default radius
+      # ladder keeps the first radius that BUILDS, which is not always one that is
+      # usable -- at radius 70 this group's mesh had sub-metre cells and flipped the compliance verdict.
+      # Students do not change this.
+      geometry:
+        refine_radius_m: 48.0
+
+      # --- Geothermal doublet (REAL validated AWEL concession; both wells active) ---
+      # Extraction well = the compliance/monitoring "Well". Absolute Swiss LV95 (EPSG:2056).
+      doublet:
+        concession_id: "b010222"
+        injection_easting: 2682236.9      # m (LV95)
+        injection_northing: 1247838.9     # m (LV95)
+        extraction_easting: 2682181.9      # m (LV95) - compliance/monitoring Well
+        extraction_northing: 1247873.9    # m (LV95)
+        pumping_rate_m3_d: 4320           # per-concession Q [m3/d]; both wells run at |Q|
+        recirculation_fraction: 0.0       # NOT YET DERIVED (pending M3b, unlike groups 0-8);
+                                          # reference only -- no part of the transport model reads it
+      source:
+        type: "point"
+        release_type: "pulse"
+        location:
+          # Source position is an easting/northing OFFSET relative to the
+          # extraction well: this places your spill upgradient of it. Whether the
+          # plume is then CAPTURED and whether it EXCEEDS the threshold is the
+          # question you answer -- it is deliberately not given to you here.
+          easting: 88.2
+          northing: -108.7
+          layer: 1
+        start_time_days: 0
+        duration_days: 1
+        # SYNTHETIC scenario-design value (not a measured field concentration).
+        #   2026-09-01: at 8.0 mg/L the shipped geometry reported 1.155 of the
+        #   threshold (EXCEEDS), but that mesh carried sub-metre cells. On the two
+        #   validated meshes the same scenario gives 0.83 and 0.93 -- COMPLIANT.
+        #   The old verdict was a mesh artifact, so the scenario is re-scaled to sit
+        #   clearly on the side the trustworthy meshes actually support.
+        #   At 5.5 mg/L they give 0.57-0.64, inside the instructor acceptance rule
+        #   (every validated mesh below 0.8, or above 1.333, of the threshold).
+        concentration_mg_L: 5.5
+        ssm_itype: -1
+
+      simulation:
+        duration_days: 1095
+
+      monitoring:
+        threshold_mg_L: 0.02    # TBDV drinking-water value for nickel
+        compliance_location: "Well"
