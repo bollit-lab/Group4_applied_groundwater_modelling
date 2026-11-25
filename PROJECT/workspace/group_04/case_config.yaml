@@ -6,7 +6,7 @@
 # Concession numbers and scenarios are FIXED by group number.
 
 group:
-  number: 4                               # TODO: integer group number (0-12)
+  number: 04                               # TODO: integer group number (0-12)
   authors:                                # TODO: list all group members (2–3 persons)
     - "Grant Kawamoto"
     - "Mark Schaefer"                      # remove if only 2 members / add third if needed
@@ -53,7 +53,7 @@ model:
 
 output:
   # All group results should go into a dedicated folder using the group number.
-  workspace: "~/applied_groundwater_modelling_data/limmat/case_study_group_"  # auto-expand: replace <group_number>
+  workspace: "~/applied_groundwater_modelling_data/limmat/case_study_group_0"  # auto-expand: replace <group_number>
 
 # NOTE: there is no `pumping:` block to fill in. The concession wells, their
 # rates and the 50% half-rate variant are ALL resolved for you from the
