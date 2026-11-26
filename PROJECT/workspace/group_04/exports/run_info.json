@@ -1,0 +1,35 @@
+{
+  "schema_version": "2.0",
+  "generated_utc": "2026-11-25T12:12:28+00:00",
+  "group_number": 4,
+  "crs": "EPSG:2056",
+  "exports": [
+    "flow_budget_summary.csv",
+    "flow_heads_sub_base.gpkg",
+    "flow_heads_sub_scenario.gpkg",
+    "flow_heads_sub_wells.gpkg",
+    "pathlines_summary.csv",
+    "run_info.json",
+    "transport_breakthrough.csv",
+    "transport_meta.json"
+  ],
+  "missing_required": [],
+  "concession": "b010120",
+  "sim_name": "limmat_valley",
+  "grid": {
+    "type": "DISV",
+    "ncpl": 4371
+  },
+  "states_exported": [
+    "base",
+    "scenario",
+    "wells"
+  ],
+  "head_masking": "dry / no-flow cells (|head| > 1e+29, the MF6 hdry/hnoflo sentinels) are written as NaN",
+  "package_versions": {
+    "flopy": "3.9.5",
+    "numpy": "2.3.5",
+    "geopandas": "1.1.2",
+    "python": "3.12.16"
+  }
+}

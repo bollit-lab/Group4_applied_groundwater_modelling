@@ -1,0 +1,16 @@
+{
+  "group": 4,
+  "concession": "b010120",
+  "contaminant": "Chromium (Cr-VI)",
+  "threshold_mg_L": 0.1,
+  "compliance_location": "Property boundary and wells",
+  "source_concentration_mg_L": 9.0,
+  "release_type": "pulse",
+  "duration_days": 1,
+  "simulation_days": 730,
+  "ncpl": 4371,
+  "nstp": 2534,
+  "peak_mg_L": 0.06458711507256858,
+  "t_peak_days": 138.1015408929276,
+  "t_exceedance_days": null
+}

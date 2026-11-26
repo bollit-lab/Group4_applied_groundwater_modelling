@@ -1,0 +1,6 @@
+metric,value
+mean_travel_time_d_to_extraction,14.702562055769059
+n_reached_extraction,115.0
+n_released,194.0
+max_backtrack_time_d,490.0115169323047
+capture_zone_pathline_count,198.0

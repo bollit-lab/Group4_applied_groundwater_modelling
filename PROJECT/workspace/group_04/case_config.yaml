@@ -6,7 +6,7 @@
 # Concession numbers and scenarios are FIXED by group number.
 
 group:
-  number: 04                               # TODO: integer group number (0-12)
+  number: 4                               # TODO: integer group number (0-12)
   authors:                                # TODO: list all group members (2–3 persons)
     - "Grant Kawamoto"
     - "Mark Schaefer"                      # remove if only 2 members / add third if needed
@@ -30,14 +30,13 @@ group:
 title: "Impact of a dry period on the groundwater flow field."  # TODO: tailor the title (you may refine but keep core meaning)
 
 description: >
-  TODO: Provide 2–5 sentences describing the specific groundwater flow problem for your
-  concession: state the location context, purpose of the well group, and why assessing
-  its impact matters (e.g. potential interference, river depletion, drawdown near
-  sensitive receptors). You will implement the concessioned pumping rates and a
-  50% pumping variant, then evaluate changes in heads, gradients, and river leakage.
-  GW Flow Problem Proposal: In this project, we aim to study a pair of wells in the Limmat
-  catchment. We will examine the effects of different pumping rates as well as the impact of
-  a predetermined scenario.
+  In this project, we investigate the hydraulic impact of a shallow geothermal
+  doublet well near Zurich Main Station in the unconfined Limmat aquifer. The wells
+  are situated 127.5 m apart and ~217 m from the Limmat River. Using a steady-state model,
+  we compare full and 50% pumping rates alongside a scenario, which reduces areal recharge by 20%
+  to represent persistent dry periods and increased surface sealing. This assessment is essential
+  to quantify possible river depletion, thermal-hydraulic recirculation between the wells,
+  and drawdown effects on neighboring water users.
 
 model:
   # Calibrated MF6 05f flow model -- the SAME simulation the transport
@@ -150,18 +149,37 @@ scenarios:
       recharge_factor: 0.6
 
 implementation_plan: >
-  TODO: Bullet the concrete steps you will perform (baseline load, add wells, run
-  concession rates, run 50% rates, apply scenario parameter/stress change, produce maps
-  of head difference, river leakage comparison, drawdown profiles, budget summaries).
+  - Load the calibrated MODFLOW 6 baseline simulation for the Limmat aquifer
+  - Add the Concession 120 well group and run simulations at 100% and 50% pumping rates.
+  - Apply our given Scenario SC4 (20% reduction in groundwater recharge) in addition to 100% pumping.
+  - Compute head difference maps, drawdown profiles, and river leakage comparisons across all simulations.
+  - Summarize the five quantitative evaluation metrics and export the results for further analysis.
+
 
 evaluation_metrics: >
-  TODO: Define 3–5 metrics (e.g. max drawdown at key location, total river leakage change (m3/day),
-  area where drawdown > 0.5 m, change in gradient toward river, % change in discharge components).
+  - max_drawdown_wells_m: Maximum drawdown induced by 100% concessioned pumping (baseline minus wells_only) [m].
+  - max_drawdown_half_m: Maximum drawdown induced by 50% reduced pumping (baseline minus wells_only_half) [m].
+  - max_drawdown_scenario_m: Maximum combined drawdown under 100% pumping and the -20% recharge scenario (baseline minus wells_plus_scenario) [m].
+  - area_drawdown_gt_0p5m_m2: Total aquifer area experiencing true drawdown > 0.5 m under 100% pumping, excluding injection mounding [m2].
+  - river_leakage_change_scenario_m3d: Change in net river exchange (RIV) caused by the -20% recharge scenario (wells_plus_scenario minus wells_only) [m3/d].
 
 deliverables: >
-  TODO: List expected artifacts (plots, tables) & short narrative explaining impacts of the well group
-  under concession vs 50% pumping and under the selected scenario.
+  - hydraulic head and drawdown/mounding maps that compare baseline, 100% concession pumping,
+    50% pumping and Scenario SC4 with 80% recharge
+  - drawdown profiles across the doublet well axis and toward the Limmat River
+  - water-budget comparison tables (highlighting Limmat river leakage change)
+  - contaminant breakthrough curves at the extraction well (100% vs. 50% pumping and SC4)
+
+  Under 100% pumping, the doublet well will locally create noticeable drawdown and mounding cones, 
+  induce additional river infiltration from the river (~217 m away), and lead to a 37.6% hydraulic recirculation.
+  Reduced pumping at 50% are expected to roughly halve the head gradients, river depletion and recirculation.
+  The scenario (-20% recharge) will lower the water-table and increase drawdown effects and river infiltration.
 
 quality_checks: >
-  TODO: Briefly state how you will verify model stability (mass balance error, convergence, sensitivity bounds).
-
+  The model stability across all simulations (baseline, 50% and 100% pumping, and Scenario SC4) will be
+  verified by:
+  - confirming IMS solver convergence
+  - checking that global volumetric mass balance errors will remain well below 0.5%
+  - ensuring that no active cells go dry and heads stay within the physical boundaries
+  - checking sensitivity boundaries by comparing drawdown and river-leakage responses between 50% vs. 100%
+    pumping and baseline vs. 80% recharge.
